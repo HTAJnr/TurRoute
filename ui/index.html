@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TurRoute — Optimização de Rotas em Moçambique</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/ui/css/linear.css">
+</head>
+<body>
+  <div class="app-layout">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+
+      <div class="sidebar-logo">
+        <img src="/logo.png" alt="TurRoute" class="logo-img" onerror="this.style.display='none'">
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-label">Presets rápidos</div>
+        <div class="preset-group">
+          <button class="btn btn-secondary btn-sm" data-preset="south">Sul</button>
+          <button class="btn btn-secondary btn-sm" data-preset="center-north">Centro-Norte</button>
+          <button class="btn btn-secondary btn-sm" data-preset="complete">Completo</button>
+        </div>
+      </div>
+
+      <div class="sidebar-section" style="flex:1;min-height:0;display:flex;flex-direction:column;">
+        <div class="section-label">
+          Cidades
+          <span class="badge" id="city-count">0</span>
+        </div>
+        <div class="city-grid" id="city-checkboxes">
+          <!-- populated by app.js -->
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-label">Cidade de Partida</div>
+        <select class="input" id="start-city-select">
+          <option value="">Selecionar...</option>
+        </select>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-label">Algoritmo</div>
+        <select class="input" id="algorithm-select">
+          <option value="Todos">Todos os Algoritmos</option>
+          <option value="A* (MST)">A* (MST)</option>
+          <option value="Greedy">Greedy (Nearest Neighbor)</option>
+          <option value="BFS">BFS</option>
+          <option value="DFS">DFS</option>
+        </select>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-primary btn-default btn-run" id="run-btn" disabled>
+          Calcular Rota
+        </button>
+        <p class="sidebar-hint" id="hint-text">Selecione pelo menos 2 cidades</p>
+      </div>
+
+    </aside>
+
+    <!-- ── Map ── -->
+    <main class="map-area">
+
+      <!-- Flight HUD overlay (outside map-container so it anchors to map-area left) -->
+      <div class="flight-hud" id="flight-hud" style="display:none;">
+        <div class="hud-route">
+          <span id="hud-from">—</span>
+          <span class="hud-arrow">→</span>
+          <span id="hud-to">—</span>
+        </div>
+        <div class="hud-details">
+          <span id="hud-distance">0 km</span>
+          <span class="hud-dot">·</span>
+          <span id="hud-time">0min</span>
+        </div>
+        <div class="hud-progress">
+          <div class="hud-progress-bar" id="hud-progress-bar"></div>
+        </div>
+      </div>
+
+      <div class="map-container">
+        <svg id="moz-map"
+             viewBox="0 0 500 760"
+             xmlns="http://www.w3.org/2000/svg"
+             preserveAspectRatio="xMidYMid meet"
+             font-family="Inter, -apple-system, sans-serif">
+          <defs>
+            <radialGradient id="land-grad" cx="48%" cy="52%" r="65%">
+              <stop offset="0%"   stop-color="#252730"/>
+              <stop offset="100%" stop-color="#1a1c20"/>
+            </radialGradient>
+            <filter id="glow-city" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="3.5" result="b"/>
+              <feComposite in="SourceGraphic" in2="b" operator="over"/>
+            </filter>
+            <!-- ClipPath: keeps provinces clipped to national border shape -->
+            <clipPath id="moz-clip">
+              <path id="moz-clip-path"/>
+            </clipPath>
+          </defs>
+
+          <!-- Base country fill (always correct shape from real GeoJSON) -->
+          <path id="moz-border" fill="url(#land-grad)" stroke="none"/>
+
+          <!-- Provinces clipped to national border (filled by map.js) -->
+          <g id="provinces-layer" clip-path="url(#moz-clip)"></g>
+
+          <!-- National border outline drawn on top -->
+          <path id="moz-border-stroke" fill="none" stroke="#3a3e50" stroke-width="1.0" stroke-linejoin="round"/>
+          <path id="moz-border-glow"   fill="none" stroke="rgba(94,106,210,0.07)" stroke-width="3" stroke-linejoin="round"/>
+
+          <!-- Route lines (drawn by map.js) -->
+          <g id="route-layer"></g>
+
+          <!-- City markers (drawn by map.js) -->
+          <g id="cities-layer"></g>
+
+          <!-- Airplane -->
+          <g id="plane-wrapper" transform="translate(-100,-100)">
+            <g id="plane-body">
+              <!-- Fuselage -->
+              <ellipse cx="0" cy="0" rx="11" ry="2.8" fill="#f0f2ff" opacity="0.97"/>
+              <!-- Nose cap (points right / +x) -->
+              <polygon points="9,-1.5 14,0 9,1.5" fill="#e8eaff" opacity="0.93"/>
+              <!-- Main swept wing -->
+              <polygon points="0,-2 -3,-11 -1,-11 3,0 -1,11 -3,11 0,2" fill="#d4d9f8" opacity="0.90"/>
+              <!-- Tail horizontal stabilisers -->
+              <polygon points="-8,-1.5 -13,-6 -10,-1.5" fill="#b8bde8" opacity="0.85"/>
+              <polygon points="-8,1.5  -13,6  -10,1.5"  fill="#b8bde8" opacity="0.85"/>
+              <!-- Engine nacelle -->
+              <ellipse cx="-1" cy="5.5" rx="4" ry="1.5" fill="#c8cce0" opacity="0.70"/>
+            </g>
+          </g>
+        </svg>
+
+      </div>
+    </main>
+
+    <!-- ── Results Panel ── -->
+    <aside class="results-panel" id="results-panel" style="display:none;">
+      <div class="results-header">
+        <span class="results-title">Resultados</span>
+        <button class="btn btn-tertiary btn-sm" id="close-results" title="Fechar">✕</button>
+      </div>
+      <div id="results-content"></div>
+    </aside>
+
+  </div>
+
+  <script src="/ui/js/map.js"></script>
+  <script src="/ui/js/app.js"></script>
+</body>
+</html>

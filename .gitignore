@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+
+# Streamlit (legacy)
+.streamlit/
+
+# Flask / dev
+*.log
+instance/
+flask_session/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code
+.claude/
