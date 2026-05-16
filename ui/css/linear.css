@@ -513,6 +513,25 @@ html, body {
   border-radius: var(--radius-8);
 }
 
+.segment-item--connecting {
+  border-left: 2px solid var(--color-orange);
+  opacity: 0.82;
+}
+
+.seg-connecting {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 5px;
+  font-size: 9px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-orange);
+  background: rgba(252, 120, 64, 0.12);
+  border-radius: var(--radius-4);
+  padding: 1px 5px;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
 .seg-idx {
   width: 18px;
   height: 18px;

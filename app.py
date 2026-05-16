@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from data.cities import CITIES
 from data.distances import get_distance
+from data.routes import has_direct_flight
 from algorithms.runner import run_all_algorithms
 
 ROOT = os.path.dirname(__file__)
@@ -87,6 +88,7 @@ def route():
             'from': path[i],
             'to': path[i + 1],
             'distance': round(d, 1),
+            'direct': has_direct_flight(path[i], path[i + 1]),
         })
 
     # Close the circuit: return leg to start city
@@ -95,6 +97,7 @@ def route():
         'from': path[-1],
         'to': path[0],
         'distance': round(d_return, 1),
+        'direct': has_direct_flight(path[-1], path[0]),
     })
 
     # Closed path for animation (includes start city at end)

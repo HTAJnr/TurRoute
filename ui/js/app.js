@@ -44,7 +44,7 @@ function buildClosedRoute(path, cityMap) {
 const PRESETS = {
   south:        { cities: ['Maputo', 'Inhambane', 'Vilanculos'],                         start: 'Maputo' },
   'center-north': { cities: ['Beira', 'Chimoio', 'Quelimane', 'Tete', 'Nampula'],       start: 'Beira'  },
-  complete:     { cities: ['Maputo', 'Inhambane', 'Vilanculos', 'Beira', 'Quelimane', 'Tete', 'Nampula', 'Pemba'], start: 'Maputo' },
+  complete:     { cities: ['Maputo', 'Inhambane', 'Vilanculos', 'Beira', 'Chimoio', 'Quelimane', 'Tete', 'Nampula', 'Nacala', 'Lichinga', 'Pemba'], start: 'Maputo' },
 };
 
 // ── State ─────────────────────────────────────────────────────────────────
@@ -274,11 +274,14 @@ function renderResults(data) {
   `;
 
   data.segments.forEach((seg, i) => {
+    const directBadge = seg.direct === false
+      ? `<span class="seg-connecting" title="Sem voo directo LAM — requer escala">escala</span>`
+      : '';
     html += `
-      <div class="segment-item">
+      <div class="segment-item${seg.direct === false ? ' segment-item--connecting' : ''}">
         <span class="seg-idx">${i + 1}</span>
         <div class="seg-info">
-          <span class="seg-route">${seg.from} → ${seg.to}</span>
+          <span class="seg-route">${seg.from} → ${seg.to}${directBadge}</span>
           <span class="seg-details">${seg.distance} km · ${fmtSegTime(seg.distance)}</span>
         </div>
       </div>

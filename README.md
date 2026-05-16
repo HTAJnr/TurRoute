@@ -39,7 +39,7 @@ TurRoute/
 │   ├── dfs.py              # Busca em profundidade — rápido, não óptimo
 │   ├── astar.py            # A* com heurística MST (Prim) — óptimo
 │   └── runner.py           # Orquestrador: corre os algoritmos seleccionados
-└── static/
+└── ui/
     ├── index.html          # SPA principal
     ├── css/linear.css      # Design system Linear
     └── js/
