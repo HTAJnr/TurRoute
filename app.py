@@ -78,6 +78,13 @@ def route():
 
     results = run_all_algorithms(cities_list, start_city, selected)
 
+    # Calcular tempo de voo real para cada resultado (circuito completo: rota + regresso)
+    for r in results:
+        path = r['path']
+        return_dist = get_distance(path[-1], path[0])
+        total_km = r['cost'] + return_dist
+        r['flight_time_min'] = round(total_km / 500 * 60, 1)
+
     best = min(results, key=lambda r: r['cost'])
     path = best['path']
 

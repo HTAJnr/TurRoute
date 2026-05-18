@@ -428,7 +428,7 @@ html, body {
 /* ── Results Panel ───────────────────────────────────────────────────────── */
 
 .results-panel {
-  width: 270px;
+  width: 340px;
   flex-shrink: 0;
   background: var(--color-bg-level-1);
   border-left: 1px solid var(--color-border-primary);
@@ -668,3 +668,346 @@ html, body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-bg-quaternary); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-text-quaternary); }
+
+/* ── Run progress bar ────────────────────────────────────────────────────── */
+
+.run-progress-wrap {
+  width: 100%;
+  height: 3px;
+  background: var(--color-bg-tertiary);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.run-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--color-brand-bg);
+  border-radius: 2px;
+  transition: width 180ms ease;
+}
+
+/* ── Algo warning ────────────────────────────────────────────────────────── */
+
+.algo-warning {
+  font-size: 10px;
+  color: #fc7840;
+  margin-top: 4px;
+}
+
+/* ── Single algorithm metrics ────────────────────────────────────────────── */
+
+.single-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.single-metric {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-6);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.single-metric-label {
+  font-size: 10px;
+  color: var(--color-text-quaternary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.single-metric-value {
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+/* ── Metrics comparison cards ────────────────────────────────────────────── */
+
+.metrics-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.metrics-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-6);
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.metrics-icon { font-size: 14px; }
+
+.metrics-card-label {
+  font-size: 11px;
+  color: var(--color-text-quaternary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metrics-card-value {
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.metrics-card-sub {
+  font-size: 10px;
+  color: var(--color-brand-bg);
+}
+
+/* ── Metrics comparison table ────────────────────────────────────────────── */
+
+.metrics-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 10px;
+  border-radius: var(--radius-6);
+  border: 1px solid var(--color-border-primary);
+}
+
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+
+.metrics-table th {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-quaternary);
+  font-weight: var(--font-weight-medium);
+  padding: 5px 6px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-primary);
+  white-space: nowrap;
+}
+
+.metrics-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--color-border-primary);
+  white-space: nowrap;
+}
+
+.metrics-table tr:last-child td { border-bottom: none; }
+
+.metrics-table tr.row-best td { background: rgba(39, 166, 68, 0.06); }
+
+.text-green { color: #27a644; font-weight: var(--font-weight-medium); }
+.text-warn  { color: #fc7840; }
+
+/* ── Chart containers ────────────────────────────────────────────────────── */
+
+.chart-wrap {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-6);
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+/* ── Textual analysis ────────────────────────────────────────────────────── */
+
+.metrics-analysis {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-6);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.metrics-analysis p {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0 0 6px 0;
+}
+
+.metrics-analysis p:last-child { margin-bottom: 0; }
+
+.metrics-analysis strong { color: var(--color-text-primary); }
+
+/* ── Results Tab Strip ───────────────────────────────────────────────────── */
+
+.results-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--color-border-primary);
+  flex-shrink: 0;
+}
+
+.results-tab {
+  flex: 1;
+  height: 36px;
+  padding: 0 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-6) var(--radius-6) 0 0;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-regular);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.011em;
+  cursor: pointer;
+  transition: color 140ms ease, border-bottom-color 140ms ease;
+  margin-bottom: -1px;
+  outline: none;
+}
+
+.results-tab:hover { color: var(--color-text-secondary); }
+
+.results-tab.active {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-brand-bg);
+}
+
+.results-tab-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.results-tab-panel[hidden] { display: none; }
+
+/* ── Hero Stats ──────────────────────────────────────────────────────────── */
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.hero-stat {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-8);
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-stat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-brand-bg);
+  border-radius: var(--radius-8) var(--radius-8) 0 0;
+}
+
+.hero-stat-label {
+  display: block;
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.hero-stat-value {
+  display: block;
+  font-size: 24px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.022em;
+  line-height: 1.1;
+  animation: heroCountIn 280ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.hero-stat-sub {
+  display: block;
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  margin-top: 4px;
+}
+
+/* ── Algo rank badge ─────────────────────────────────────────────────────── */
+
+.algo-rank-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-bg-quaternary);
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.algo-rank-badge--first {
+  background: rgba(94,106,210,0.18);
+  color: var(--color-brand-bg);
+}
+
+/* ── Delta badge (inline in table) ──────────────────────────────────────── */
+
+.delta-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: var(--font-weight-medium);
+  padding: 1px 4px;
+  border-radius: var(--radius-4);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.delta-badge--best {
+  background: rgba(39,166,68,0.14);
+  color: var(--color-green);
+}
+
+.delta-badge--warn {
+  background: rgba(252,120,64,0.12);
+  color: var(--color-orange);
+}
+
+/* ── Chart title ─────────────────────────────────────────────────────────── */
+
+.chart-title {
+  font-size: 10px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.chart-wrap canvas {
+  max-height: 180px;
+}
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.results-tab-panel:not([hidden]) {
+  animation: tabFadeIn 200ms ease forwards;
+}
+
+@keyframes heroCountIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

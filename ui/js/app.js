@@ -17,7 +17,7 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 // ── Build closed waypoints + segments for a path ─────────────────────────
 
 function buildClosedRoute(path, cityMap) {
-  const closed = [...path, path[0]]; // closed circuit
+  const closed = [...path, path[0]];
 
   const waypoints = closed.map(name => {
     const c      = cityMap[name];
@@ -42,32 +42,64 @@ function buildClosedRoute(path, cityMap) {
 // ── Presets ───────────────────────────────────────────────────────────────
 
 const PRESETS = {
-  south:        { cities: ['Maputo', 'Inhambane', 'Vilanculos'],                         start: 'Maputo' },
-  'center-north': { cities: ['Beira', 'Chimoio', 'Quelimane', 'Tete', 'Nampula'],       start: 'Beira'  },
-  complete:     { cities: ['Maputo', 'Inhambane', 'Vilanculos', 'Beira', 'Chimoio', 'Quelimane', 'Tete', 'Nampula', 'Nacala', 'Lichinga', 'Pemba'], start: 'Maputo' },
+  south:          { cities: ['Maputo', 'Inhambane', 'Vilanculos'],                                                                   start: 'Maputo' },
+  'center-north': { cities: ['Beira', 'Chimoio', 'Quelimane', 'Tete', 'Nampula'],                                                   start: 'Beira'  },
+  complete:       { cities: ['Maputo', 'Inhambane', 'Vilanculos', 'Beira', 'Chimoio', 'Quelimane', 'Tete', 'Nampula', 'Nacala', 'Lichinga', 'Pemba'], start: 'Maputo' },
 };
 
 // ── State ─────────────────────────────────────────────────────────────────
 
 const state = {
-  allCities:   [],
-  selected:    [],
-  startCity:   '',
-  algorithm:   'Todos',
-  lastResults: [],
+  allCities:    [],
+  selected:     [],
+  startCity:    '',
+  algorithm:    'Todos',
+  lastResults:  [],
   activeAlgoIdx: -1,
 };
 
 // ── DOM refs ──────────────────────────────────────────────────────────────
 
-const $cityGrid    = document.getElementById('city-checkboxes');
-const $cityCount   = document.getElementById('city-count');
-const $startSelect = document.getElementById('start-city-select');
-const $algoSelect  = document.getElementById('algorithm-select');
-const $runBtn      = document.getElementById('run-btn');
-const $hint        = document.getElementById('hint-text');
-const $resultsPanel= document.getElementById('results-panel');
-const $resultsBody = document.getElementById('results-content');
+const $cityGrid     = document.getElementById('city-checkboxes');
+const $cityCount    = document.getElementById('city-count');
+const $startSelect  = document.getElementById('start-city-select');
+const $algoSelect   = document.getElementById('algorithm-select');
+const $runBtn       = document.getElementById('run-btn');
+const $hint         = document.getElementById('hint-text');
+const $resultsPanel = document.getElementById('results-panel');
+const $panelRota    = document.getElementById('panel-rota');
+const $panelAnalise = document.getElementById('panel-analise');
+const $tabRota      = document.getElementById('tab-rota');
+const $tabAnalise   = document.getElementById('tab-analise');
+
+// ── Chart registry (destroy before recreate) ──────────────────────────────
+
+const chartRegistry = {};
+
+function destroyChart(id) {
+  if (chartRegistry[id]) {
+    chartRegistry[id].destroy();
+    delete chartRegistry[id];
+  }
+}
+
+// ── Formatters ────────────────────────────────────────────────────────────
+
+function fmtKm(km) { return `${Math.round(km).toLocaleString('pt-PT')} km`; }
+
+function fmtMinutes(mins) {
+  const h = Math.floor(mins / 60);
+  const m = Math.round(mins % 60);
+  return h > 0 ? `${h}h ${m}min` : `${m}min`;
+}
+
+function fmtFlightTime(km) {
+  return fmtMinutes(km / 500 * 60);
+}
+
+function fmtSegTime(km) {
+  return fmtMinutes(km / 500 * 60);
+}
 
 // ── Validation ────────────────────────────────────────────────────────────
 
@@ -84,9 +116,9 @@ function buildCityList() {
   $cityGrid.className = 'city-list';
 
   const regions = [
-    { label: 'Sul',    names: ['Maputo','Inhambane','Vilanculos'] },
-    { label: 'Centro', names: ['Beira','Chimoio','Quelimane','Tete'] },
-    { label: 'Norte',  names: ['Nampula','Nacala','Lichinga','Pemba'] },
+    { label: 'Sul',    names: ['Maputo', 'Inhambane', 'Vilanculos'] },
+    { label: 'Centro', names: ['Beira', 'Chimoio', 'Quelimane', 'Tete'] },
+    { label: 'Norte',  names: ['Nampula', 'Nacala', 'Lichinga', 'Pemba'] },
   ];
 
   regions.forEach(({ label, names }) => {
@@ -121,7 +153,6 @@ function onCityToggle(name, btn) {
 
   $cityCount.textContent = state.selected.length;
 
-  // Rebuild start-city dropdown
   $startSelect.innerHTML = '<option value="">Selecionar...</option>';
   state.selected.forEach(n => {
     const opt = new Option(n, n);
@@ -154,11 +185,9 @@ document.querySelectorAll('[data-preset]').forEach(btn => {
     const preset = PRESETS[btn.dataset.preset];
     if (!preset) return;
 
-    // Deactivate all preset buttons, activate this one
     document.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    // Set toggle buttons
     document.querySelectorAll('.city-toggle').forEach(btn => {
       btn.classList.toggle('selected', preset.cities.includes(btn.dataset.city));
     });
@@ -167,7 +196,6 @@ document.querySelectorAll('[data-preset]').forEach(btn => {
     state.startCity = preset.start;
     $cityCount.textContent = state.selected.length;
 
-    // Rebuild start select
     $startSelect.innerHTML = '<option value="">Selecionar...</option>';
     state.selected.forEach(name => {
       const opt = new Option(name, name);
@@ -190,8 +218,19 @@ document.getElementById('close-results').addEventListener('click', () => {
 async function runRoute() {
   if (state.selected.length < 2 || !state.startCity) return;
 
-  $runBtn.disabled   = true;
+  $runBtn.disabled    = true;
   $runBtn.textContent = 'A calcular…';
+  $hint.textContent   = '';
+
+  const $progressWrap = document.getElementById('run-progress-wrap');
+  const $progressBar  = document.getElementById('run-progress-bar');
+  if ($progressWrap) $progressWrap.style.display = 'block';
+
+  let progPct = 0;
+  const progInterval = setInterval(() => {
+    progPct = Math.min(progPct + 4, 88);
+    if ($progressBar) $progressBar.style.width = progPct + '%';
+  }, 180);
 
   try {
     const res = await fetch('/api/route', {
@@ -208,8 +247,9 @@ async function runRoute() {
 
     const data = await res.json();
 
-    // Find best result index in results array for colour highlighting
-    state.lastResults  = data.results;
+    if ($progressBar) $progressBar.style.width = '100%';
+
+    state.lastResults   = data.results;
     state.activeAlgoIdx = data.results.findIndex(r => r === data.best);
     if (state.activeAlgoIdx === -1) state.activeAlgoIdx = 0;
 
@@ -230,42 +270,83 @@ async function runRoute() {
   } catch (err) {
     $hint.textContent = `Erro: ${err.message}`;
   } finally {
-    $runBtn.disabled   = false;
+    clearInterval(progInterval);
+    setTimeout(() => {
+      if ($progressWrap) $progressWrap.style.display = 'none';
+      if ($progressBar)  $progressBar.style.width = '0%';
+    }, 500);
+    $runBtn.disabled    = false;
     $runBtn.textContent = 'Calcular Rota';
     validate();
   }
 }
 
+// ── Tab management ────────────────────────────────────────────────────────
+
+let _analiseRendered = false;
+
+function activateTab(tabId) {
+  const isRota = tabId === 'rota';
+  $tabRota.classList.toggle('active', isRota);
+  $tabAnalise.classList.toggle('active', !isRota);
+  $tabRota.setAttribute('aria-selected', String(isRota));
+  $tabAnalise.setAttribute('aria-selected', String(!isRota));
+  $panelRota.hidden    = !isRota;
+  $panelAnalise.hidden =  isRota;
+
+  if (!isRota && !_analiseRendered && state.lastResults.length > 1) {
+    _analiseRendered = true;
+    _buildCharts(state.lastResults);
+  } else if (!isRota && _analiseRendered) {
+    ['cost', 'nodes', 'time'].forEach(id => {
+      if (chartRegistry[id]) chartRegistry[id].resize();
+    });
+  }
+}
+
+$tabRota.addEventListener('click',    () => activateTab('rota'));
+$tabAnalise.addEventListener('click', () => activateTab('analise'));
+
+// Delegated click for algo-card switching (registered once)
+$panelRota.addEventListener('click', e => {
+  const card = e.target.closest('[data-algo-orig-idx]');
+  if (!card) return;
+  const idx = parseInt(card.dataset.algoOrigIdx);
+  if (idx === state.activeAlgoIdx) return;
+  state.activeAlgoIdx = idx;
+  setActiveRoute(idx);
+  $panelRota.querySelectorAll('[data-algo-orig-idx]').forEach(c => {
+    c.classList.toggle('algo-card--active', parseInt(c.dataset.algoOrigIdx) === idx);
+  });
+  const r = state.lastResults[idx];
+  if (r && r.path && r.path.length >= 2) {
+    const cityMap = {};
+    state.allCities.forEach(c => { cityMap[c.name] = c; });
+    const { waypoints, segments } = buildClosedRoute(r.path, cityMap);
+    switchToRoute(waypoints, segments);
+  }
+});
+
 // ── Render results panel ──────────────────────────────────────────────────
-
-function fmtKm(km) { return `${Math.round(km).toLocaleString('pt-PT')} km`; }
-
-function fmtFlightTime(km) {
-  const mins = km / 500 * 60;
-  const h    = Math.floor(mins / 60);
-  const m    = Math.round(mins % 60);
-  return h > 0 ? `${h}h ${m}min` : `${m}min`;
-}
-
-function fmtSegTime(km) {
-  const mins = km / 500 * 60;
-  const h    = Math.floor(mins / 60);
-  const m    = Math.round(mins % 60);
-  return h > 0 ? `${h}h ${m}min` : `${m}min`;
-}
 
 function renderResults(data) {
   const best = data.best;
+  const totalCircuitKm = data.segments.reduce((sum, s) => sum + s.distance, 0);
 
+  _analiseRendered = false;
+
+  // ── Rota tab ──
   let html = `
-    <div class="result-summary">
-      <div class="result-stat">
-        <span class="stat-label">Distância</span>
-        <span class="stat-value">${fmtKm(best.cost)}</span>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-label">Distância</span>
+        <span class="hero-stat-value">${fmtKm(best.cost)}</span>
+        <span class="hero-stat-sub">circuito completo</span>
       </div>
-      <div class="result-stat">
-        <span class="stat-label">Tempo de Voo</span>
-        <span class="stat-value">${fmtFlightTime(best.cost)}</span>
+      <div class="hero-stat">
+        <span class="hero-stat-label">Tempo de Voo</span>
+        <span class="hero-stat-value">${fmtFlightTime(totalCircuitKm)}</span>
+        <span class="hero-stat-sub">a 500 km/h</span>
       </div>
     </div>
 
@@ -293,17 +374,19 @@ function renderResults(data) {
   if (data.results.length > 1) {
     html += `<div class="result-section-label">Algoritmos</div>`;
     const sorted = [...data.results].map((r, origIdx) => ({ ...r, _origIdx: origIdx })).sort((a, b) => a.cost - b.cost);
-    const ALGO_COLORS = ['#5e6ad2','#27a644','#f0bf00','#fc7840'];
-    sorted.forEach((r, i) => {
-      const isBest   = i === 0;
+    const ALGO_COLORS = ['#5e6ad2', '#27a644', '#f0bf00', '#fc7840'];
+    sorted.forEach((r, rank) => {
+      const isBest   = rank === 0;
       const isActive = r._origIdx === state.activeAlgoIdx;
       const color    = ALGO_COLORS[r._origIdx % ALGO_COLORS.length];
+      const warning  = r._warning ? `<div class="algo-warning">⚠ ${r._warning}</div>` : '';
       html += `
         <div class="algo-card ${isBest ? 'algo-card--best' : ''} ${isActive ? 'algo-card--active' : ''}"
              data-algo-orig-idx="${r._origIdx}"
              style="border-left-color:${color}">
           <div class="algo-card-header">
             <span class="algo-name" style="display:flex;align-items:center;gap:6px;">
+              <span class="algo-rank-badge${isBest ? ' algo-rank-badge--first' : ''}">#${rank + 1}</span>
               <span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;display:inline-block;"></span>
               ${r.algorithm}
             </span>
@@ -311,50 +394,231 @@ function renderResults(data) {
           </div>
           <div class="algo-metrics">
             <span>${fmtKm(r.cost)}</span>
-            <span>${r.time_ms.toFixed(1)}ms</span>
-            <span>${r.nodes_expanded} nós</span>
+            <span>${fmtMinutes(r.flight_time_min)}</span>
+            <span>${r.nodes_expanded.toLocaleString('pt-PT')} nós</span>
           </div>
+          ${warning}
         </div>
       `;
     });
+  } else if (data.results.length === 1) {
+    const r = data.results[0];
+    html += `
+      <div class="result-section-label">Métricas</div>
+      <div class="single-metrics">
+        <div class="single-metric">
+          <span class="single-metric-label">Distância</span>
+          <span class="single-metric-value">${fmtKm(r.cost)}</span>
+        </div>
+        <div class="single-metric">
+          <span class="single-metric-label">Tempo de Voo</span>
+          <span class="single-metric-value">${fmtMinutes(r.flight_time_min)}</span>
+        </div>
+        <div class="single-metric">
+          <span class="single-metric-label">Nós Explorados</span>
+          <span class="single-metric-value">${r.nodes_expanded.toLocaleString('pt-PT')}</span>
+        </div>
+        <div class="single-metric">
+          <span class="single-metric-label">Garante Óptimo</span>
+          <span class="single-metric-value">${r.optimal ? '✅ Sim' : '❌ Não'}</span>
+        </div>
+      </div>
+    `;
   }
 
   html += `<div class="result-section-label">Ordem de Visita</div><div class="visit-order">`;
   best.path.forEach((city, i) => {
-    const isStart = i === 0;
     html += `
       <div class="visit-item">
         <span class="visit-num">${i + 1}</span>
         <span class="visit-city">${city}</span>
-        ${isStart ? '<span class="visit-badge">partida</span>' : ''}
+        ${i === 0 ? '<span class="visit-badge">partida</span>' : ''}
       </div>
     `;
   });
   html += `</div>`;
 
-  $resultsBody.innerHTML = html;
+  $panelRota.innerHTML = html;
+
+  if (data.results.length > 1) {
+    _buildAnaliseTabShell(data.results);
+    $tabAnalise.style.display = '';
+  } else {
+    $panelAnalise.innerHTML = '';
+    $tabAnalise.style.display = 'none';
+  }
+
   $resultsPanel.style.display = 'flex';
+  activateTab('rota');
+}
 
-  // Wire algo-card clicks: highlight route + fly plane to new route
-  const cityMap = {};
-  state.allCities.forEach(c => { cityMap[c.name] = c; });
+// ── Build Análise tab shell (no charts yet) ───────────────────────────────
 
-  $resultsBody.querySelectorAll('[data-algo-orig-idx]').forEach(card => {
-    card.addEventListener('click', () => {
-      const idx = parseInt(card.dataset.algoOrigIdx);
-      if (idx === state.activeAlgoIdx) return; // already active
-      state.activeAlgoIdx = idx;
-      setActiveRoute(idx);
-      $resultsBody.querySelectorAll('[data-algo-orig-idx]').forEach(c => {
-        c.classList.toggle('algo-card--active', parseInt(c.dataset.algoOrigIdx) === idx);
-      });
+function _buildAnaliseTabShell(results) {
+  const best        = results.reduce((a, b) => a.cost < b.cost ? a : b);
+  const fastest     = results.reduce((a, b) => a.flight_time_min < b.flight_time_min ? a : b);
+  const fewestNodes = results.reduce((a, b) => a.nodes_expanded < b.nodes_expanded ? a : b);
+  const sorted      = [...results].sort((a, b) => a.cost - b.cost);
+  const worst       = sorted[sorted.length - 1];
+  const worstPct    = ((worst.cost - best.cost) / best.cost * 100).toFixed(1);
+  const shortName   = r => r.algorithm.split(' ')[0];
+  const optimalList = results.filter(r => r.optimal).map(shortName).join(', ');
 
-      const r = state.lastResults[idx];
-      if (r && r.path && r.path.length >= 2) {
-        const { waypoints, segments } = buildClosedRoute(r.path, cityMap);
-        switchToRoute(waypoints, segments);
-      }
-    });
+  let html = `
+    <div class="result-section-label">Comparação</div>
+    <div class="metrics-cards">
+      <div class="metrics-card">
+        <span class="metrics-icon">🏆</span>
+        <span class="metrics-card-label">Melhor Rota</span>
+        <span class="metrics-card-value">${shortName(best)}</span>
+        <span class="metrics-card-sub">${fmtKm(best.cost)}</span>
+      </div>
+      <div class="metrics-card">
+        <span class="metrics-icon">✈</span>
+        <span class="metrics-card-label">Voo Mais Curto</span>
+        <span class="metrics-card-value">${shortName(fastest)}</span>
+        <span class="metrics-card-sub">${fmtMinutes(fastest.flight_time_min)}</span>
+      </div>
+      <div class="metrics-card">
+        <span class="metrics-icon">🔬</span>
+        <span class="metrics-card-label">Menos Nós</span>
+        <span class="metrics-card-value">${shortName(fewestNodes)}</span>
+        <span class="metrics-card-sub">${fewestNodes.nodes_expanded.toLocaleString('pt-PT')}</span>
+      </div>
+      <div class="metrics-card">
+        <span class="metrics-icon">✅</span>
+        <span class="metrics-card-label">Óptimo</span>
+        <span class="metrics-card-value">${optimalList || 'Nenhum'}</span>
+        <span class="metrics-card-sub">&nbsp;</span>
+      </div>
+    </div>
+  `;
+
+  html += `
+    <div class="metrics-table-wrap">
+      <table class="metrics-table">
+        <thead>
+          <tr>
+            <th>Algoritmo</th>
+            <th>Custo</th>
+            <th>Tempo</th>
+            <th>Nós</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  sorted.forEach(r => {
+    const isBest   = r === best;
+    const deltaPct = isBest
+      ? `<span class="delta-badge delta-badge--best">✓</span>`
+      : `<span class="delta-badge delta-badge--warn">+${((r.cost - best.cost) / best.cost * 100).toFixed(1)}%</span>`;
+    html += `
+      <tr${isBest ? ' class="row-best"' : ''}>
+        <td>${shortName(r)}</td>
+        <td>${fmtKm(r.cost)} ${deltaPct}</td>
+        <td>${fmtMinutes(r.flight_time_min)}</td>
+        <td>${r.nodes_expanded.toLocaleString('pt-PT')}</td>
+      </tr>
+    `;
+  });
+  html += `</tbody></table></div>`;
+
+  html += `
+    <div class="result-section-label">Gráficos</div>
+    <div class="chart-wrap">
+      <div class="chart-title">Custo Total (km)</div>
+      <canvas id="chart-cost"></canvas>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Nós Explorados</div>
+      <canvas id="chart-nodes"></canvas>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Tempo de Voo (min)</div>
+      <canvas id="chart-time"></canvas>
+    </div>
+  `;
+
+  html += `
+    <div class="result-section-label">Análise</div>
+    <div class="metrics-analysis">
+      <p>O melhor algoritmo foi <strong>${best.algorithm}</strong> com <strong>${fmtKm(best.cost)}</strong> e ${fmtMinutes(best.flight_time_min)} de voo.</p>
+      ${worstPct > 0 ? `<p>O pior foi <strong>${worst.algorithm}</strong>, ${worstPct}% acima do óptimo.</p>` : ''}
+      ${optimalList ? `<p>Garantem solução óptima: <strong>${optimalList}</strong>.</p>` : ''}
+      <p>O Greedy explora menos nós e calcula mais rápido, mas não garante a rota mínima. O A* usa a heurística MST para encontrar o óptimo com menos exploração que o BFS exaustivo.</p>
+    </div>
+  `;
+
+  $panelAnalise.innerHTML = html;
+}
+
+// ── Build Chart.js charts (lazy, horizontal bars) ─────────────────────────
+
+function _buildCharts(results) {
+  if (typeof Chart === 'undefined') return;
+
+  const sorted      = [...results].sort((a, b) => a.cost - b.cost);
+  const best        = sorted[0];
+  const fewestNodes = results.reduce((a, b) => a.nodes_expanded < b.nodes_expanded ? a : b);
+  const shortName   = r => r.algorithm.split(' ')[0];
+  const labels      = sorted.map(shortName);
+
+  const GREEN  = 'rgba(39,166,68,0.85)';
+  const BLUE   = 'rgba(94,106,210,0.75)';
+  const CORAL  = 'rgba(252,120,64,0.75)';
+  const PURPLE = 'rgba(110,100,200,0.75)';
+
+  const costColors = sorted.map(r => r === best        ? GREEN : BLUE);
+  const nodeColors = sorted.map(r => r === fewestNodes ? GREEN : CORAL);
+  const timeColors = sorted.map(() => PURPLE);
+
+  const baseOpts = {
+    indexAxis: 'y',
+    responsive: true,
+    animation: { duration: 600 },
+    plugins: {
+      legend: { display: false },
+    },
+    scales: {
+      x: {
+        ticks: { color: '#8b8f9a', font: { size: 10 } },
+        grid:  { color: 'rgba(255,255,255,0.05)' },
+      },
+      y: {
+        ticks: { color: '#8b8f9a', font: { size: 10 } },
+        grid:  { display: false },
+      },
+    },
+  };
+
+  destroyChart('cost');
+  chartRegistry['cost'] = new Chart(document.getElementById('chart-cost'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: sorted.map(r => r.cost), backgroundColor: costColors, borderRadius: 4 }],
+    },
+    options: baseOpts,
+  });
+
+  destroyChart('nodes');
+  chartRegistry['nodes'] = new Chart(document.getElementById('chart-nodes'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: sorted.map(r => r.nodes_expanded), backgroundColor: nodeColors, borderRadius: 4 }],
+    },
+    options: baseOpts,
+  });
+
+  destroyChart('time');
+  chartRegistry['time'] = new Chart(document.getElementById('chart-time'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: sorted.map(r => r.flight_time_min), backgroundColor: timeColors, borderRadius: 4 }],
+    },
+    options: baseOpts,
   });
 }
 
@@ -363,7 +627,7 @@ function renderResults(data) {
 async function init() {
   await initMap();
 
-  const res  = await fetch('/api/cities');
+  const res = await fetch('/api/cities');
   state.allCities = await res.json();
 
   setCityData(state.allCities);

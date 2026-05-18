@@ -60,6 +60,9 @@
         <button class="btn btn-primary btn-default btn-run" id="run-btn" disabled>
           Calcular Rota
         </button>
+        <div class="run-progress-wrap" id="run-progress-wrap" style="display:none;">
+          <div class="run-progress-bar" id="run-progress-bar"></div>
+        </div>
         <p class="sidebar-hint" id="hint-text">Selecione pelo menos 2 cidades</p>
       </div>
 
@@ -149,11 +152,21 @@
         <span class="results-title">Resultados</span>
         <button class="btn btn-tertiary btn-sm" id="close-results" title="Fechar">✕</button>
       </div>
-      <div id="results-content"></div>
+      <div class="results-tabs" role="tablist" aria-label="Painéis de resultados">
+        <button class="results-tab active" id="tab-rota" role="tab"
+                aria-selected="true" aria-controls="panel-rota">Rota</button>
+        <button class="results-tab" id="tab-analise" role="tab"
+                aria-selected="false" aria-controls="panel-analise">Análise</button>
+      </div>
+      <div class="results-tab-panel" id="panel-rota"
+           role="tabpanel" aria-labelledby="tab-rota"></div>
+      <div class="results-tab-panel" id="panel-analise"
+           role="tabpanel" aria-labelledby="tab-analise" hidden></div>
     </aside>
 
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="/ui/js/map.js"></script>
   <script src="/ui/js/app.js"></script>
 </body>
