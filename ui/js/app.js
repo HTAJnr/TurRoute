@@ -104,9 +104,16 @@ function fmtSegTime(km) {
 // ── Validation ────────────────────────────────────────────────────────────
 
 function validate() {
-  const ok = state.selected.length >= 2 && state.startCity !== '';
-  $runBtn.disabled = !ok;
-  $hint.textContent = ok ? '' : 'Selecione pelo menos 2 cidades';
+  const ok         = state.selected.length >= 2 && state.startCity !== '';
+  const bfsBlocked = state.algorithm === 'BFS' && state.selected.length >= 10;
+  $runBtn.disabled = !ok || bfsBlocked;
+  if (bfsBlocked) {
+    $hint.textContent = `BFS bloqueado: ${state.selected.length} cidades excedem o limite de 10. O espaço de busca cresce factorialmente (n!) e seria computacionalmente inviável.`;
+    $hint.style.color = '#f0bf00';
+  } else {
+    $hint.textContent  = ok ? '' : 'Selecione pelo menos 2 cidades';
+    $hint.style.color  = '';
+  }
 }
 
 // ── City toggle list ──────────────────────────────────────────────────────
@@ -176,7 +183,7 @@ $startSelect.addEventListener('change', () => {
   updateMapCities(state.selected, state.startCity);
 });
 
-$algoSelect.addEventListener('change', () => { state.algorithm = $algoSelect.value; });
+$algoSelect.addEventListener('change', () => { state.algorithm = $algoSelect.value; validate(); });
 
 // ── Preset buttons ────────────────────────────────────────────────────────
 

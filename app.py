@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from data.cities import CITIES
 from data.distances import get_distance
 from data.routes import has_direct_flight
-from algorithms.runner import run_all_algorithms
+from algorithms.runner import run_all_algorithms, BFS_CITY_LIMIT
 
 ROOT = os.path.dirname(__file__)
 app = Flask(__name__, static_folder='ui', static_url_path='/ui')
@@ -71,9 +71,18 @@ def route():
         return jsonify({'error': 'Cidade de partida inválida'}), 400
 
     if algorithm == 'Todos':
-        selected = ['A*', 'Greedy', 'BFS', 'DFS']
+        selected = ['A*', 'Greedy', 'DFS']
+        if len(cities_list) < BFS_CITY_LIMIT:
+            selected.append('BFS')
     else:
         key = ALGO_MAP.get(algorithm)
+        if key == 'BFS' and len(cities_list) >= BFS_CITY_LIMIT:
+            return jsonify({
+                'error': (
+                    f'BFS bloqueado: {len(cities_list)} cidades excedem o limite de {BFS_CITY_LIMIT}. '
+                    f'O espaço de busca cresce factorialmente (n!) e torna-se computacionalmente inviável.'
+                )
+            }), 400
         selected = [key] if key else ['A*']
 
     results = run_all_algorithms(cities_list, start_city, selected)
