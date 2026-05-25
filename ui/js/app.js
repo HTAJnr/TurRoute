@@ -2,6 +2,17 @@
 
 'use strict';
 
+// ── SVG icons (Lucide-style) ──────────────────────────────────────────────
+const ICON = {
+  trophy:        `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`,
+  plane:         `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 4s-2 1-3.5 2.5L11 9 3 8l-.5.5 7 7L7 22l.5.5L16 19l3.2 1.8.6-.6-.8-1Z"/></svg>`,
+  cpu:           `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M9 2v2M2 15h2M2 9h2M22 15h-2M22 9h-2M15 22v-2M9 22v-2"/></svg>`,
+  checkCircle:   `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+  xCircle:       `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`,
+  alertTriangle: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`,
+  check:         `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+};
+
 // ── Haversine distance (km) ───────────────────────────────────────────────
 
 function haversineKm(lat1, lon1, lat2, lon2) {
@@ -141,7 +152,7 @@ function buildCityList() {
       btn.className = 'city-toggle';
       btn.dataset.city = name;
       btn.type = 'button';
-      btn.innerHTML = `<span class="city-toggle-indicator">✓</span><span class="city-toggle-name">${name}</span>`;
+      btn.innerHTML = `<span class="city-toggle-indicator">${ICON.check}</span><span class="city-toggle-name">${name}</span>`;
       btn.addEventListener('click', () => onCityToggle(name, btn));
       $cityGrid.appendChild(btn);
     });
@@ -386,7 +397,7 @@ function renderResults(data) {
       const isBest   = rank === 0;
       const isActive = r._origIdx === state.activeAlgoIdx;
       const color    = ALGO_COLORS[r._origIdx % ALGO_COLORS.length];
-      const warning  = r._warning ? `<div class="algo-warning">⚠ ${r._warning}</div>` : '';
+      const warning  = r._warning ? `<div class="algo-warning">${ICON.alertTriangle} ${r._warning}</div>` : '';
       html += `
         <div class="algo-card ${isBest ? 'algo-card--best' : ''} ${isActive ? 'algo-card--active' : ''}"
              data-algo-orig-idx="${r._origIdx}"
@@ -427,7 +438,7 @@ function renderResults(data) {
         </div>
         <div class="single-metric">
           <span class="single-metric-label">Garante Óptimo</span>
-          <span class="single-metric-value">${r.optimal ? '✅ Sim' : '❌ Não'}</span>
+          <span class="single-metric-value">${r.optimal ? `${ICON.checkCircle} Sim` : `${ICON.xCircle} Não`}</span>
         </div>
       </div>
     `;
@@ -475,25 +486,25 @@ function _buildAnaliseTabShell(results) {
     <div class="result-section-label">Comparação</div>
     <div class="metrics-cards">
       <div class="metrics-card">
-        <span class="metrics-icon">🏆</span>
+        <span class="metrics-icon">${ICON.trophy}</span>
         <span class="metrics-card-label">Melhor Rota</span>
         <span class="metrics-card-value">${shortName(best)}</span>
         <span class="metrics-card-sub">${fmtKm(best.cost)}</span>
       </div>
       <div class="metrics-card">
-        <span class="metrics-icon">✈</span>
+        <span class="metrics-icon">${ICON.plane}</span>
         <span class="metrics-card-label">Voo Mais Curto</span>
         <span class="metrics-card-value">${shortName(fastest)}</span>
         <span class="metrics-card-sub">${fmtMinutes(fastest.flight_time_min)}</span>
       </div>
       <div class="metrics-card">
-        <span class="metrics-icon">🔬</span>
+        <span class="metrics-icon">${ICON.cpu}</span>
         <span class="metrics-card-label">Menos Nós</span>
         <span class="metrics-card-value">${shortName(fewestNodes)}</span>
         <span class="metrics-card-sub">${fewestNodes.nodes_expanded.toLocaleString('pt-PT')}</span>
       </div>
       <div class="metrics-card">
-        <span class="metrics-icon">✅</span>
+        <span class="metrics-icon">${ICON.checkCircle}</span>
         <span class="metrics-card-label">Óptimo</span>
         <span class="metrics-card-value">${optimalList || 'Nenhum'}</span>
         <span class="metrics-card-sub">&nbsp;</span>
@@ -517,7 +528,7 @@ function _buildAnaliseTabShell(results) {
   sorted.forEach(r => {
     const isBest   = r === best;
     const deltaPct = isBest
-      ? `<span class="delta-badge delta-badge--best">✓</span>`
+      ? `<span class="delta-badge delta-badge--best">${ICON.check}</span>`
       : `<span class="delta-badge delta-badge--warn">+${((r.cost - best.cost) / best.cost * 100).toFixed(1)}%</span>`;
     html += `
       <tr${isBest ? ' class="row-best"' : ''}>

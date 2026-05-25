@@ -12,6 +12,18 @@ __pycache__/
 instance/
 flask_session/
 
+# Word temp files
+~$*.docx
+~$*.doc
+~WRL*.tmp
+*.tmp
+
+# Backup files
+*_backup.docx
+
+# pytest cache
+.pytest_cache/
+
 # OS
 .DS_Store
 Thumbs.db
